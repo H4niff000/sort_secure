@@ -531,43 +531,64 @@ button:active { transform: translateY(2px); box-shadow: none; }
   let active = false;
   let clock = null;
 
-  function getLeaderboard() {
-    return JSON.parse(localStorage.getItem('sort_secure_lb') || '[]');
-  }
+ // URL app script leader board
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbJs48p-PNnXxsfG5eQfUld682lcEmoaVEzF2wx5MDGZ73IruzxF2YhID-YV_Bvqt0wA/exec";
 
-  function saveScore(nick, sc, diff) {
-    const lb = getLeaderboard();
-    lb.push({ nick, score: sc, diff, date: new Date().toLocaleDateString('th-TH') });
-    lb.sort((a, b) => b.score - a.score);
-    localStorage.setItem('sort_secure_lb', JSON.stringify(lb.slice(0, 10)));
+// ฟังก์ชันดึงข้อมูล Leaderboard จาก Google Sheets แบบสดๆ
+async function getLeaderboard() {
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
   }
+}
 
-  function renderLeaderboard() {
-    const lb = getLeaderboard();
-    if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ ร่วมเป็นคนแรกเลย!</p>';
-    
-    let html = `
-      <table class="leaderboard-table">
-        <thead>
-          <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>ระดับ</th></tr>
-        </thead>
-        <tbody>
-    `;
-    lb.forEach((row, i) => {
-      const isMe = row.nick === nickname;
-      html += `
-        <tr class="${isMe ? 'highlight' : ''}">
-          <td>${i + 1}</td>
-          <td>${row.nick}</td>
-          <td><b>${row.score}</b></td>
-          <td><small>${row.diff.toUpperCase()}</small></td>
-        </tr>
-      `;
+// ฟังก์ชันบันทึกคะแนนส่งตรงเข้า Google Sheets
+async function saveScore(nick, sc, diff) {
+  const payload = {
+    nick: nick,
+    score: sc,
+    diff: diff,
+    date: new Date().toLocaleDateString('th-TH')
+  };
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
     });
-    html += '</tbody></table>';
-    return html;
+  } catch (e) {
+    console.error("Save error", e);
   }
+}
 
+// ปรับฟังก์ชัน renderLeaderboard ให้รองรับ Async
+async function renderLeaderboard() {
+  const lb = await getLeaderboard();
+  if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ หรือกำลังโหลด...</p>';
+  
+  let html = `
+    <table class="leaderboard-table">
+      <thead>
+        <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>ระดับ</th></tr>
+      </thead>
+      <tbody>
+  `;
+  lb.forEach((row, i) => {
+    const isMe = row.nick === nickname;
+    html += `
+      <tr class="${isMe ? 'highlight' : ''}">
+        <td>${i + 1}</td>
+        <td>${row.nick}</td>
+        <td><b>${row.score}</b></td>
+        <td><small>${row.diff.toUpperCase()}</small></td>
+      </tr>
+    `;
+  });
+  html += '</tbody></table>';
+  return html;
+}
   function setupBins() {
     ['safe', 'unsafe'].forEach(kind => {
       const bin = $(kind + 'Bin');
@@ -771,7 +792,7 @@ button:active { transform: translateY(2px); box-shadow: none; }
     $('overlay').classList.remove('hidden');
   });
 
-  $('btnLeaderboard').addEventListener('click', () => {
+  $('btnLeaderboard').addEventListener('click', async () => {
     playSFX('click');
     $('modalTitle').textContent = '🏆 LEADERBOARD';
     $('modalSub').textContent = '10 อันดับคะแนนสูงสุดประจำบูธ';
