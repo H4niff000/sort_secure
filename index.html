@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SORT SECURE — Cybersecurity Pixel Game (Open House Edition)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Prompt:wght@400;500;600;700&display=swap');
+
+/* ==========================================
+   1. GLOBAL STYLES & RETRO CYBER-ORANGE PALETTE
+   ========================================== */
+:root {
+  --navy: #060a21;
+  --panel: #0d163a;
+  --orange: #ff6b00;
+  --orange-light: #ff9d00;
+  --gold: #ffd65c;
+  --green: #3cd070;
+  --red: #ff4769;
+  --yellow: #ffc83b;
+  --cyan: #4deeea;
+  --blue: #2a52be;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 16px 10px 24px;
+  background: radial-gradient(ellipse at 50% 0%, #1e1b4b 0%, #0c0f2d 50%, #040614 100%);
+  color: #f4f6ff;
+  font-family: Prompt, Arial, sans-serif;
+  user-select: none;
+}
+
+.wrap {
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* ==========================================
+   2. HEADER & LOGO SECTION (KBU & SCIT DTI)
+   ========================================== */
+header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.branding {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(13, 22, 58, 0.7);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 107, 0, 0.4);
+}
+
+.logo-svg {
+  width: 32px;
+  height: 32px;
+}
+
+.logo-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.logo-text span {
+  display: block;
+  color: var(--orange-light);
+  font-size: 10px;
+}
+
+h1 {
+  font: clamp(20px, 4vw, 34px) "Press Start 2P", monospace;
+  color: var(--orange-light);
+  text-shadow: 3px 3px #8b1e00, 0 0 20px rgba(255, 107, 0, 0.5);
+  margin: 8px 0;
+  letter-spacing: -1px;
+}
+
+.sub {
+  color: #a4b3e6;
+  letter-spacing: 1.5px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ==========================================
+   3. MAIN CONTAINER & HUD (HEADS-UP DISPLAY)
+   ========================================== */
+.frame {
+  border: 4px solid var(--orange);
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(145deg, #12193e, #090e28);
+  box-shadow: 0 0 0 4px #060a21, 0 0 25px rgba(255, 107, 0, 0.25), 0 16px 40px #0009;
+  position: relative;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed #202e6e;
+}
+
+.player-info {
+  font-size: 13px;
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  background: #060b24;
+  border: 2px solid #283778;
+  border-radius: 8px;
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.stat small {
+  display: block;
+  color: #8c9fde;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.stat strong {
+  font: clamp(11px, 1.8vw, 15px) "Press Start 2P", monospace;
+  display: block;
+  margin-top: 5px;
+  color: white;
+}
+
+#lives {
+  color: var(--red);
+  letter-spacing: 2px;
+}
+
+#combo {
+  color: var(--gold);
+}
+
+.instruction {
+  background: linear-gradient(90deg, #ff6b00 0%, #ff9d00 100%);
+  color: #000;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 13px;
+  box-shadow: 0 3px 0 #b34b00;
+}
+
+/* ==========================================
+   4. BINS & CARDS TRAY
+   ========================================== */
+.bins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.bin {
+  min-height: 125px;
+  border: 3px dashed;
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+  transition: transform 0.15s, filter 0.15s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.bin.safe { background: linear-gradient(#053d28, #032418); border-color: var(--green); }
+.bin.unsafe { background: linear-gradient(#541223, #300a14); border-color: var(--red); }
+.bin.suspicious { background: linear-gradient(#54410a, #2b2104); border-color: var(--yellow); }
+
+.bin.over { filter: brightness(1.4); transform: scale(1.02); }
+.bin h2 { font-size: clamp(13px, 2vw, 17px); margin: 0; }
+.bin .symbol { font-size: 28px; }
+.bin p { font-size: 10px; margin: 0; color: #d0d9fb; opacity: 0.8; }
+
+.tray {
+  margin-top: 12px;
+  background: #050a21;
+  border: 2px solid #25336e;
+  border-radius: 9px;
+  padding: 10px;
+}
+
+.trayhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #92a4e8;
+  font-size: 12px;
+}
+
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.item {
+  background: linear-gradient(180deg, #1c2759, #101738);
+  color: #ffffff;
+  border: 2px solid #3d52a4;
+  border-bottom: 4px solid var(--orange);
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: grab;
+  text-align: center;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+.item:hover { transform: translateY(-2px); border-color: var(--orange-light); }
+.item.selected { border-color: var(--gold); background: #283778; box-shadow: 0 0 10px var(--gold); }
+.item .emoji { font-size: 26px; }
+.item b { font-size: 11px; line-height: 1.3; color: #f0f4ff; }
+.item small { font-size: 9px; color: #8e9ed4; }
+
+.feedback {
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 8px;
+  background: #0a1030;
+  border: 2px solid #23326d;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+  color: #dbe4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.feedback.good { border-color: var(--green); color: #8bffb9; background: #042616; }
+.feedback.bad { border-color: var(--red); color: #ffb0bf; background: #2d0710; }
+
+/* ==========================================
+   5. BUTTONS, MODAL & LEADERBOARD TABLE
+   ========================================== */
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+button {
+  font: 700 13px Prompt, sans-serif;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: transform 0.08s, filter 0.1s;
+}
+
+.btn-primary { background: linear-gradient(to bottom, #ff9d00, #ff6b00); color: #000; box-shadow: 0 3px #a34400; }
+.btn-secondary { background: linear-gradient(to bottom, #3b4c96, #23306b); color: white; box-shadow: 0 3px #121a3d; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+button:active { transform: translateY(2px); box-shadow: none; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 20, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  z-index: 10;
+}
+
+.modal {
+  max-width: 540px;
+  width: 100%;
+  background: linear-gradient(145deg, #131b42, #0a0f28);
+  border: 3px solid var(--orange);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
+  text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  font: clamp(16px, 3.5vw, 24px) "Press Start 2P", monospace;
+  color: var(--orange-light);
+  margin-top: 0;
+}
+
+.input-group {
+  margin: 15px 0;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--orange-light);
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  background: #050a21;
+  border: 2px solid #2d3e85;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-family: Prompt, sans-serif;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
+.diff-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.diff-btn {
+  background: #080e2c;
+  border: 2px solid #263677;
+  border-radius: 6px;
+  padding: 8px 4px;
+  color: #a4b5f0;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.diff-btn.selected {
+  border-color: var(--orange);
+  background: rgba(255, 107, 0, 0.15);
+  color: white;
+  font-weight: 700;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  background: #070d2b;
+  color: var(--orange-light);
+  padding: 8px;
+  border-bottom: 2px solid var(--orange);
+}
+
+.leaderboard-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #1a2554;
+}
+
+.leaderboard-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+.leaderboard-table tr.highlight { background: rgba(255, 107, 0, 0.2); font-weight: 700; }
+
+.hidden { display: none !important; }
+.shake { animation: shakeAnim 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+
+@keyframes shakeAnim {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+.footer {
+  text-align: center;
+  color: #6173b0;
+  font-size: 10px;
+  margin-top: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- HEADER & LOGO SECTION -->
+  <header>
+    <div class="branding">
+      <!-- KBU SVG LOGO -->
+      <div class="logo-box">
+        <svg class="logo-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#ff6b00" />
+          <path d="M 50 15 L 80 40 L 50 65 L 20 40 Z" fill="#ffffff" />
+          <path d="M 35 50 L 35 75 L 65 75 L 65 50" fill="none" stroke="#ffffff" stroke-width="6" />
+        </svg>
+        <div class="logo-text">KBU<span>เกษมบัณฑิต</span></div>
+      </div>
+      <!-- SCIT DTI SVG LOGO -->
+      <div class="logo-box">
+        <svg class="logo-svg" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="50" rx="40" ry="18" fill="none" stroke="#4deeea" stroke-width="5" transform="rotate(-30 50 50)" />
+          <ellipse cx="50" cy="50" rx="40" ry="18" fill="none" stroke="#ff6b00" stroke-width="5" transform="rotate(30 50 50)" />
+          <circle cx="50" cy="50" r="10" fill="#ffd65c" />
+        </svg>
+        <div class="logo-text">SCIT<span>DTI CYBER</span></div>
+      </div>
+    </div>
+    <h1>🛡 SORT SECURE</h1>
+    <div class="sub">OPEN HOUSE EDITION • CYBERSECURITY PIXEL GAME</div>
+  </header>
+
+  <!-- GAME FRAME -->
+  <main class="frame" id="gameFrame">
+    <div class="top-bar">
+      <div class="player-info">👤 ผู้เล่น: <span id="displayNick">—</span></div>
+      <div class="top-actions">
+        <button class="btn-secondary btn-sm" id="soundToggle">🔊 เสียง: เปิด</button>
+        <button class="btn-secondary btn-sm" id="btnLeaderboard">🏆 อันดับ</button>
+      </div>
+    </div>
+
+    <section class="hud">
+      <div class="stat"><small>TIME</small><strong id="time">60</strong></div>
+      <div class="stat"><small>SCORE</small><strong id="score">000</strong></div>
+      <div class="stat"><small>COMBO</small><strong id="combo">x1</strong></div>
+      <div class="stat"><small>LIVES</small><strong id="lives">♥ ♥ ♥</strong></div>
+    </section>
+
+    <div class="instruction">ลากการ์ดสถานการณ์ไปวางในช่องที่ถูกต้อง หรือคลิกการ์ดแล้วเลือกกล่อง!</div>
+
+    <section class="bins" id="binsContainer">
+      <!-- Bins will be dynamically inserted by JS -->
+    </section>
+
+    <section class="tray">
+      <div class="trayhead">
+        <b>📦 การ์ดสถานการณ์</b>
+        <span id="progress">0 / 0 จัดหมวดแล้ว</span>
+      </div>
+      <div class="items" id="items"></div>
+      <div class="feedback" id="feedback">เตรียมตัวพร้อมแล้ว เลือกการ์ดสถานการณ์เพื่อเริ่มลุย!</div>
+    </section>
+
+    <div class="bottom">
+      <button class="btn-secondary" id="restart">↻ เริ่มใหม่</button>
+      <button class="btn-primary" id="btnChangePlayer">👤 เปลี่ยนผู้เล่น</button>
+    </div>
+  </main>
+  
+  <div class="footer">FACULTY OF SCIENCE AND TECHNOLOGY • KASEM BUNDIT UNIVERSITY</div>
+</div>
+
+<!-- START & OVERLAY MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalContent">
+    <h2 id="modalTitle">SORT SECURE</h2>
+    <p id="modalSub">กรอกชื่อเล่นสั้นๆ เพื่อเริ่มภารกิจไซเบอร์!</p>
+    
+    <div id="startForm">
+      <div class="input-group">
+        <label for="nickInput">ชื่อเล่นของคุณ (ห้ามซ้ำกับผู้อื่น):</label>
+        <input type="text" id="nickInput" maxlength="12" placeholder="เช่น CyberNinja, AgentX" autocomplete="off">
+        <small id="nickErr" style="color:var(--red); display:none; margin-top:4px;">* ชื่อนี้มีผู้ใช้งานแล้ว หรือไม่ถูกต้อง</small>
+      </div>
+
+      <div class="input-group">
+        <label>เลือกระดับความยาก (Difficulty):</label>
+        <div class="diff-selector">
+          <div class="diff-btn selected" data-diff="easy"><b>EASY</b><br><small>8 ข้อ | 60วิ</small></div>
+          <div class="diff-btn" data-diff="medium"><b>MEDIUM</b><br><small>12 ข้อ | 45วิ</small></div>
+          <div class="diff-btn" data-diff="hard"><b>EXPERT</b><br><small>16 ข้อ | 35วิ</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalBodyCustom" class="hidden"></div>
+
+    <div style="margin-top: 18px; display:flex; gap:10px; justify-content:center;">
+      <button class="btn-primary" id="btnStartGame">▶ เริ่มเล่นเกม</button>
+      <button class="btn-secondary hidden" id="btnCloseModal">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ==========================================
+     1. CYBERSECURITY QUESTION BANK
+     ========================================== */
+  const cardsPool = [
+    { emoji: "🔐", name: "ใช้รหัสผ่านยาวสลับอักขระพิเศษ", kind: "safe", why: "ถูกต้อง! Password ที่ซับซ้อนช่วยป้องกันการคาดเดา" },
+    { emoji: "🔗", name: "คลิกลิงก์แปลกๆ จาก SMS แจ้งโชคดี", kind: "unsafe", why: "ใช่แล้ว! ลิงก์ SMS มักเป็น Phishing ขโมยข้อมูล" },
+    { emoji: "🛡️", name: "อัปเดตระบบ OS สม่ำเสมอ", kind: "safe", why: "เยี่ยมมาก! การอัปเดตช่วยปิดช่องโหว่ความปลอดภัย" },
+    { emoji: "📩", name: "บอกรหัส OTP ให้คนที่อ้างเป็นตำรวจ", kind: "unsafe", why: "ถูกต้อง! ห้ามเผยแพร่ OTP แก่ผู้อื่นเด็ดขาด" },
+    { emoji: "🔒", name: "เปิดใช้ Passkey / 2FA ยืนยันตัวตน", kind: "safe", why: "ถูกต้อง! 2FA เพิ่มความปลอดภัยอีกขั้น" },
+    { emoji: "📥", name: "ดาวน์โหลดโปรแกรมโกงเกมจากเว็บเถื่อน", kind: "unsafe", why: "ถูกต้อง! ไฟล์เสี่ยงติด Malware หรือ Ransomware" },
+    { emoji: "📶", name: "ทำธุรกรรมธนาคารผ่าน Wi-Fi สาธารณะ", kind: "unsafe", why: "ถูกต้อง! Wi-Fi สาธารณะอาจถูกดักรับข้อมูลได้" },
+    { emoji: "💾", name: "สำรองข้อมูลสำคัญลง External Drive", kind: "safe", why: "ถูกต้อง! ช่วยกู้คืนข้อมูลเมื่อถูกเรียกค่าไถ่" },
+    
+    // Medium & Hard Addition
+    { emoji: "🔌", name: "เสียบสายชาร์จมือถือที่ตู้ชาร์จฟรีตามห้าง", kind: "unsafe", why: "ถูกต้อง! เสี่ยง Juice Jacking ถูกแฮกข้อมูลผ่านสาย" },
+    { emoji: "📹", name: "เพื่อนวิดีโอคอลยืมเงินแต่ปากไม่ตรงกับเสียง", kind: "suspicious", why: "ถูกต้อง! เสี่ยงภัย Deepfake AI ต้องโทรเช็กตรง" },
+    { emoji: "📷", name: "สแกน QR Code บนเสาไฟเพื่อรับส่วนลด", kind: "suspicious", why: "ถูกต้อง! เสี่ยง Qishing นำไปสู่เว็บปลอม" },
+    { emoji: "📧", name: "อีเมลจากมหาวิทยาลัยสั่งขู่ระงับบัญชีด่วน", kind: "suspicious", why: "ถูกต้อง! ต้องตรวจสอบที่อยู่อีเมลผู้ส่งก่อนกด" },
+    { emoji: "💳", name: "บันทึกเลขบัตรเครดิตไว้บนคอมพิวเตอร์สาธารณะ", kind: "unsafe", why: "ถูกต้อง! ผู้ใช้งานคนต่อไปอาจแอบนำไปใช้ได้" },
+    { emoji: "🔑", name: "ใช้รหัสผ่านเดียวกันในทุกๆ เว็บไซต์", kind: "unsafe", why: "ถูกต้อง! หากหลุด 1 เว็บไซต์ บัญชีอื่นจะโดนด้วย" },
+    { emoji: "📱", name: "การแจ้งเตือนกดยืนยัน 2FA เด้งขึ้นมารัวๆ ทั้งที่ไม่ได้เข้า", kind: "suspicious", why: "ถูกต้อง! เสี่ยง MFA Fatigue Attack ห้ามกดอนุมัติ" },
+    { emoji: "🕵️", name: "ตรวจสอบ URL เว็บไซต์ว่ามี https:// เสมอ", kind: "safe", why: "ถูกต้อง! เพิ่มความมั่นใจว่าข้อมูลได้รับการเข้ารหัส" }
+  ];
+
+  /* ==========================================
+     2. WEB AUDIO API SYNTH SOUND ENGINE
+     ========================================== */
+  let audioCtx = null;
+  let soundEnabled = true;
+  let bgmInterval = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  function playTone(freq, type, duration, vol = 0.1) {
+    if (!soundEnabled || !audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function playSFX(name) {
+    if (!soundEnabled) return;
+    initAudio();
+    if (name === 'click') playTone(600, 'square', 0.05, 0.05);
+    else if (name === 'good') {
+      playTone(523.25, 'triangle', 0.1, 0.1);
+      setTimeout(() => playTone(659.25, 'triangle', 0.15, 0.1), 80);
+    } else if (name === 'bad') {
+      playTone(180, 'sawtooth', 0.2, 0.15);
+      setTimeout(() => playTone(130, 'sawtooth', 0.25, 0.15), 100);
+    } else if (name === 'win') {
+      [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2, 0.1), i * 100));
+    } else if (name === 'lose') {
+      [400, 350, 300, 250].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.2, 0.1), i * 120));
+    }
+  }
+
+  function startBGM() {
+    stopBGM();
+    if (!soundEnabled) return;
+    initAudio();
+    let step = 0;
+    const notes = [110, 110, 146.83, 130.81];
+    bgmInterval = setInterval(() => {
+      const speedUp = time <= 15;
+      playTone(notes[step % notes.length], 'sine', speedUp ? 0.1 : 0.15, 0.03);
+      step++;
+    }, time <= 15 ? 250 : 400);
+  }
+
+  function stopBGM() {
+    if (bgmInterval) clearInterval(bgmInterval);
+  }
+
+  /* ==========================================
+     3. STATE VARIABLES & DOM ELEMENTS
+     ========================================== */
+  const $ = id => document.getElementById(id);
+  let currentDiff = 'easy';
+  let nickname = '';
+  let deck = [];
+  let score = 0;
+  let lives = 3;
+  let time = 60;
+  let combo = 1;
+  let selected = null;
+  let done = 0;
+  let active = false;
+  let clock = null;
+
+  /* ==========================================
+     4. LEADERBOARD SYSTEM (LOCAL STORAGE)
+     ========================================== */
+  function getLeaderboard() {
+    return JSON.parse(localStorage.getItem('sort_secure_lb') || '[]');
+  }
+
+  function saveScore(nick, sc, diff) {
+    const lb = getLeaderboard();
+    lb.push({ nick, score: sc, diff, date: new Date().toLocaleDateString('th-TH') });
+    lb.sort((a, b) => b.score - a.score);
+    localStorage.setItem('sort_secure_lb', JSON.stringify(lb.slice(0, 10)));
+  }
+
+  function renderLeaderboard() {
+    const lb = getLeaderboard();
+    if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ ร่วมเป็นคนแรกเลย!</p>';
+    
+    let html = `
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>ระดับ</th></tr>
+        </thead>
+        <tbody>
+    `;
+    lb.forEach((row, i) => {
+      const isMe = row.nick === nickname;
+      html += `
+        <tr class="${isMe ? 'highlight' : ''}">
+          <td>${i + 1}</td>
+          <td>${row.nick}</td>
+          <td><b>${row.score}</b></td>
+          <td><small>${row.diff.toUpperCase()}</small></td>
+        </tr>
+      `;
+    });
+    html += 'tbody></table>';
+    return html;
+  }
+
+  /* ==========================================
+     5. RENDER BINS & CARDS LOGIC
+     ========================================== */
+  function setupBins() {
+    const container = $('binsContainer');
+    container.innerHTML = '';
+    
+    const binsConfig = [
+      { id: 'safeBin', kind: 'safe', symbol: '🛡️', title: 'สิ่งที่ปลอดภัย', desc: 'SAFE • ควรปฏิบัติ' },
+      { id: 'unsafeBin', kind: 'unsafe', symbol: '⚠️', title: 'สิ่งที่ไม่ปลอดภัย', desc: 'UNSAFE • ควรหลีกเลี่ยง' }
+    ];
+
+    if (currentDiff === 'hard') {
+      binsConfig.push({ id: 'suspiciousBin', kind: 'suspicious', symbol: '🟡', title: 'น่าสงสัย/ตรวจก่อน', desc: 'CHECK FIRST • ตรวจสอบก่อน' });
+    }
+
+    binsConfig.forEach(b => {
+      const el = document.createElement('div');
+      el.className = `bin ${b.kind}`;
+      el.id = b.id;
+      el.dataset.kind = b.kind;
+      el.innerHTML = `<div class="symbol">${b.symbol}</div><h2>${b.title}</h2><p>${b.desc}</p>`;
+      
+      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('over'); });
+      el.addEventListener('dragleave', () => el.classList.remove('over'));
+      el.addEventListener('drop', e => {
+        e.preventDefault();
+        el.classList.remove('over');
+        const i = Number(e.dataTransfer.getData('text/plain'));
+        answer(b.kind, i);
+      });
+      el.addEventListener('click', () => answer(b.kind));
+      container.appendChild(el);
+    });
+  }
+
+  function renderCards() {
+    $('items').innerHTML = '';
+    deck.forEach((c, i) => {
+      if (c.used) return;
+      const el = document.createElement('div');
+      el.className = `item ${selected === i ? 'selected' : ''}`;
+      el.draggable = true;
+      el.innerHTML = `<span class="emoji">${c.emoji}</span><b>${c.name}</b><small>ลากหรือคลิกเพื่อเลือก</small>`;
+      
+      el.addEventListener('dragstart', e => {
+        playSFX('click');
+        selected = i;
+        e.dataTransfer.setData('text/plain', String(i));
+        renderCards();
+      });
+      el.addEventListener('click', () => {
+        playSFX('click');
+        selected = i;
+        renderCards();
+        $('feedback').className = 'feedback';
+        $('feedback').textContent = `เลือกแล้ว: "${c.name}" ➔ คลิกกล่องเพื่อจัดหมวด`;
+      });
+      $('items').appendChild(el);
+    });
+    $('progress').textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
+  }
+
+  function updateHUD() {
+    $('score').textContent = String(score).padStart(3, '0');
+    $('lives').textContent = lives > 0 ? '♥ '.repeat(lives).trim() : '—';
+    $('time').textContent = time;
+    $('combo').textContent = `x${combo}`;
+    $('progress').textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
+  }
+
+  /* ==========================================
+     6. GAMEPLAY CONTROLLER
+     ========================================== */
+  function answer(kind, idx = selected) {
+    if (!active || idx === null || idx === undefined || deck[idx].used) return;
+    const c = deck[idx];
+    
+    if (c.kind === kind) {
+      playSFX('good');
+      score += 10 * combo;
+      combo++;
+      done++;
+      c.used = true;
+      selected = null;
+      $('feedback').className = 'feedback good';
+      $('feedback').textContent = `✅ ${c.why}`;
+      renderCards();
+      updateHUD();
+      if (done === deck.length) end(true);
+    } else {
+      playSFX('bad');
+      lives--;
+      combo = 1;
+      selected = null;
+      $('gameFrame').classList.add('shake');
+      setTimeout(() => $('gameFrame').classList.remove('shake'), 300);
+      $('feedback').className = 'feedback bad';
+      $('feedback').textContent = `❌ ยังไม่ถูกนะ! เสียหัวใจ 1 ดวง`;
+      renderCards();
+      updateHUD();
+      if (lives <= 0) end(false);
+    }
+  }
+
+  function end(win) {
+    active = false;
+    clearInterval(clock);
+    stopBGM();
+    playSFX(win ? 'win' : 'lose');
+    
+    saveScore(nickname, score, currentDiff);
+
+    $('modalTitle').textContent = win ? 'MISSION COMPLETE!' : 'GAME OVER';
+    $('modalSub').textContent = win ? 'คุณแยกแยะภัยไซเบอร์ได้อย่างยอดเยี่ยม!' : 'พยายามได้ดี! มาลองฝึกสังเกตภัยไซเบอร์อีกครั้ง';
+    
+    $('startForm').classList.add('hidden');
+    $('modalBodyCustom').classList.remove('hidden');
+    
+    $('modalBodyCustom').innerHTML = `
+      <div style="font-size:16px; margin-bottom:10px;">คะแนนรวมของคุณ: <b style="color:var(--orange-light); font-size:22px;">${score}</b> คะแนน</div>
+      <p>ตารางคะแนนสูงสุด (TOP 10 HIGH SCORES)</p>
+      ${renderLeaderboard()}
+    `;
+
+    $('btnStartGame').textContent = '↻ เล่นอีกครั้ง';
+    $('btnCloseModal').classList.remove('hidden');
+    $('overlay').classList.remove('hidden');
+  }
+
+  function start() {
+    let count = 8;
+    if (currentDiff === 'medium') { count = 12; time = 45; lives = 3; }
+    else if (currentDiff === 'hard') { count = 16; time = 35; lives = 2; }
+    else { count = 8; time = 60; lives = 3; }
+
+    const shuffledPool = [...cardsPool].sort(() => Math.random() - 0.5);
+    deck = shuffledPool.slice(0, count).map(c => ({ ...c, used: false }));
+
+    score = 0;
+    combo = 1;
+    done = 0;
+    selected = null;
+    active = true;
+
+    setupBins();
+    renderCards();
+    updateHUD();
+
+    $('overlay').classList.add('hidden');
+    $('feedback').className = 'feedback';
+    $('feedback').textContent = 'เริ่มภารกิจแล้ว! เลือกการ์ดและจัดหมวดหมู่ให้ถูกต้อง';
+
+    startBGM();
+    clearInterval(clock);
+    clock = setInterval(() => {
+      if (!active) return;
+      time--;
+      updateHUD();
+      if (time === 15) startBGM();
+      if (time <= 0) end(false);
+    }, 1000);
+  }
+
+  /* ==========================================
+     7. EVENT LISTENERS & INITIALIZATION
+     ========================================== */
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      currentDiff = btn.dataset.diff;
+      playSFX('click');
+    });
+  });
+
+  $('btnStartGame').addEventListener('click', () => {
+    playSFX('click');
+    const inputNick = $('nickInput').value.trim();
+    
+    if ($('startForm').classList.contains('hidden')) {
+      $('startForm').classList.remove('hidden');
+      $('modalBodyCustom').classList.add('hidden');
+      $('btnCloseModal').classList.add('hidden');
+      $('modalTitle').textContent = 'SORT SECURE';
+      $('modalSub').textContent = 'กรอกชื่อเล่นสั้นๆ เพื่อเริ่มภารกิจไซเบอร์!';
+      $('btnStartGame').textContent = '▶ เริ่มเล่นเกม';
+      return;
+    }
+
+    if (!inputNick) {
+      $('nickErr').style.display = 'block';
+      $('nickErr').textContent = '* กรุณาระบุชื่อเล่นก่อนเข้าเล่น';
+      return;
+    }
+
+    const lb = getLeaderboard();
+    if (lb.some(x => x.nick.toLowerCase() === inputNick.toLowerCase()) && nickname !== inputNick) {
+      $('nickErr').style.display = 'block';
+      $('nickErr').textContent = '* ชื่อนี้มีอยู่ในตารางคะแนนแล้ว โปรดใช้ชื่ออื่น';
+      return;
+    }
+
+    $('nickErr').style.display = 'none';
+    nickname = inputNick;
+    $('displayNick').textContent = nickname;
+    start();
+  });
+
+  $('restart').addEventListener('click', () => {
+    playSFX('click');
+    if (nickname) start();
+    else $('overlay').classList.remove('hidden');
+  });
+
+  $('btnChangePlayer').addEventListener('click', () => {
+    playSFX('click');
+    active = false;
+    clearInterval(clock);
+    stopBGM();
+    $('startForm').classList.remove('hidden');
+    $('modalBodyCustom').classList.add('hidden');
+    $('btnCloseModal').classList.add('hidden');
+    $('modalTitle').textContent = 'SORT SECURE';
+    $('modalSub').textContent = 'กรอกชื่อเล่นสั้นๆ เพื่อเริ่มภารกิจไซเบอร์!';
+    $('btnStartGame').textContent = '▶ เริ่มเล่นเกม';
+    $('overlay').classList.remove('hidden');
+  });
+
+  $('btnLeaderboard').addEventListener('click', () => {
+    playSFX('click');
+    $('modalTitle').textContent = '🏆 LEADERBOARD';
+    $('modalSub').textContent = '10 อันดับคะแนนสูงสุดประจำบูธ';
+    $('startForm').classList.add('hidden');
+    $('modalBodyCustom').classList.remove('hidden');
+    $('modalBodyCustom').innerHTML = renderLeaderboard();
+    $('btnStartGame').textContent = '▶ เข้าเล่นเกม';
+    $('btnCloseModal').classList.remove('hidden');
+    $('overlay').classList.remove('hidden');
+  });
+
+  $('btnCloseModal').addEventListener('click', () => {
+    playSFX('click');
+    $('overlay').classList.add('hidden');
+  });
+
+  $('soundToggle').addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    $('soundToggle').textContent = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
+    if (!soundEnabled) stopBGM();
+    else if (active) startBGM();
+  });
+
+})();
+</script>
+</body>
+</html>
