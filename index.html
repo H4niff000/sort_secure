@@ -531,64 +531,65 @@ button:active { transform: translateY(2px); box-shadow: none; }
   let active = false;
   let clock = null;
 
- // URL app script leader board
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbJs48p-PNnXxsfG5eQfUld682lcEmoaVEzF2wx5MDGZ73IruzxF2YhID-YV_Bvqt0wA/exec";
+  // URL Web App จาก Google Apps Script ที่เชื่อมต่อ Google Sheets เรียบร้อย
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbJs48p-PNnXxsfG5eQfUld682lcEmoaVEzF2wx5MDGZ73IruzxF2YhID-YV_Bvqt0wA/exec";
 
-// ฟังก์ชันดึงข้อมูล Leaderboard จาก Google Sheets แบบสดๆ
-async function getLeaderboard() {
-  try {
-    const res = await fetch(SCRIPT_URL);
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  } catch (e) {
-    return [];
+  // ฟังก์ชันดึงข้อมูล Leaderboard จาก Google Sheets แบบ Realtime
+  async function getLeaderboard() {
+    try {
+      const res = await fetch(SCRIPT_URL);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      console.error("Fetch leaderboard error", e);
+      return [];
+    }
   }
-}
 
-// ฟังก์ชันบันทึกคะแนนส่งตรงเข้า Google Sheets
-async function saveScore(nick, sc, diff) {
-  const payload = {
-    nick: nick,
-    score: sc,
-    diff: diff,
-    date: new Date().toLocaleDateString('th-TH')
-  };
-  try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    console.error("Save error", e);
+  // ฟังก์ชันบันทึกคะแนนส่งตรงเข้า Google Sheets
+  async function saveScore(nick, sc, diff) {
+    const payload = {
+      nick: nick,
+      score: sc,
+      diff: diff,
+      date: new Date().toLocaleDateString('th-TH')
+    };
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error("Save score error", e);
+    }
   }
-}
 
-// ปรับฟังก์ชัน renderLeaderboard ให้รองรับ Async
-async function renderLeaderboard() {
-  const lb = await getLeaderboard();
-  if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ หรือกำลังโหลด...</p>';
-  
-  let html = `
-    <table class="leaderboard-table">
-      <thead>
-        <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>ระดับ</th></tr>
-      </thead>
-      <tbody>
-  `;
-  lb.forEach((row, i) => {
-    const isMe = row.nick === nickname;
-    html += `
-      <tr class="${isMe ? 'highlight' : ''}">
-        <td>${i + 1}</td>
-        <td>${row.nick}</td>
-        <td><b>${row.score}</b></td>
-        <td><small>${row.diff.toUpperCase()}</small></td>
-      </tr>
+  async function renderLeaderboard() {
+    const lb = await getLeaderboard();
+    if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ หรือกำลังโหลด...</p>';
+    
+    let html = `
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>ระดับ</th></tr>
+        </thead>
+        <tbody>
     `;
-  });
-  html += '</tbody></table>';
-  return html;
-}
+    lb.forEach((row, i) => {
+      const isMe = row.nick === nickname;
+      html += `
+        <tr class="${isMe ? 'highlight' : ''}">
+          <td>${i + 1}</td>
+          <td>${row.nick}</td>
+          <td><b>${row.score}</b></td>
+          <td><small>${row.diff.toUpperCase()}</small></td>
+        </tr>
+      `;
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
   function setupBins() {
     ['safe', 'unsafe'].forEach(kind => {
       const bin = $(kind + 'Bin');
@@ -670,13 +671,14 @@ async function renderLeaderboard() {
     }
   }
 
-  function end(win) {
+  async function end(win) {
     active = false;
     clearInterval(clock);
     stopBGM();
     playSFX(win ? 'win' : 'lose');
     
-    saveScore(nickname, score, currentDiff);
+    // บันทึกคะแนนลง Google Sheets
+    await saveScore(nickname, score, currentDiff);
 
     $('modalTitle').textContent = win ? 'MISSION COMPLETE!' : 'GAME OVER';
     $('modalSub').textContent = win ? 'คุณแยกแยะภัยไซเบอร์ในชีวิตประจำวันได้เยี่ยมยอด!' : 'พยายามได้ดี! มาลองฝึกสังเกตภัยไซเบอร์อีกครั้ง';
@@ -684,10 +686,13 @@ async function renderLeaderboard() {
     $('startForm').classList.add('hidden');
     $('modalBodyCustom').classList.remove('hidden');
     
+    // โหลดตารางอันดับล่าสุดมาโชว์หลังจบเกม
+    const lbTableHtml = await renderLeaderboard();
+    
     $('modalBodyCustom').innerHTML = `
       <div style="font-size:16px; margin-bottom:10px;">คะแนนรวมของคุณ: <b style="color:var(--orange-light); font-size:22px;">${score}</b> คะแนน</div>
       <p>ตารางคะแนนสูงสุด (TOP 10 HIGH SCORES)</p>
-      ${renderLeaderboard()}
+      ${lbTableHtml}
     `;
 
     $('btnStartGame').textContent = '↻ เล่นอีกครั้ง';
@@ -759,13 +764,6 @@ async function renderLeaderboard() {
       return;
     }
 
-    const lb = getLeaderboard();
-    if (lb.some(x => x.nick.toLowerCase() === inputNick.toLowerCase()) && nickname !== inputNick) {
-      $('nickErr').style.display = 'block';
-      $('nickErr').textContent = '* ชื่อนี้มีอยู่ในตารางคะแนนแล้ว โปรดใช้ชื่ออื่น';
-      return;
-    }
-
     $('nickErr').style.display = 'none';
     nickname = inputNick;
     $('displayNick').textContent = nickname;
@@ -795,10 +793,14 @@ async function renderLeaderboard() {
   $('btnLeaderboard').addEventListener('click', async () => {
     playSFX('click');
     $('modalTitle').textContent = '🏆 LEADERBOARD';
-    $('modalSub').textContent = '10 อันดับคะแนนสูงสุดประจำบูธ';
+    $('modalSub').textContent = '10 อันดับคะแนนสูงสุดประจำบูธ (Realtime)';
     $('startForm').classList.add('hidden');
     $('modalBodyCustom').classList.remove('hidden');
-    $('modalBodyCustom').innerHTML = renderLeaderboard();
+    $('modalBodyCustom').innerHTML = '<p style="color:#8c9fde">กำลังโหลดข้อมูลจาก Google Sheets...</p>';
+    
+    const tableHtml = await renderLeaderboard();
+    $('modalBodyCustom').innerHTML = tableHtml;
+
     $('btnStartGame').textContent = '▶ เข้าเล่นเกม';
     $('btnCloseModal').classList.remove('hidden');
     $('overlay').classList.remove('hidden');
