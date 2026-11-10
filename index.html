@@ -28,6 +28,7 @@ body {
   color: #f4f6ff;
   font-family: Prompt, Arial, sans-serif;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .wrap { max-width: 950px; margin: auto; }
@@ -197,6 +198,7 @@ h1 {
 }
 
 .item:hover { transform: translateY(-2px); border-color: var(--orange-light); }
+.item:focus-visible, button:focus-visible, .bin:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .item.selected { border-color: var(--gold); background: #283778; box-shadow: 0 0 10px var(--gold); }
 .item .emoji { font-size: 24px; }
 .item b { font-size: 11px; line-height: 1.3; color: #f0f4ff; }
@@ -405,86 +407,45 @@ button:active { transform: translateY(2px); box-shadow: none; }
 
 <script>
 (() => {
+  "use strict";
+
   const cardsPool = [
     { emoji: "🔐", name: "ตั้งรหัสผ่านยาวและมีอักขระผสมกัน", kind: "safe", why: "ถูกต้อง! รหัสผ่านที่ซับซ้อนช่วยป้องกันการเดาได้ดี" },
-    { emoji: "📩", name: "คลิกลิงก์ SMS แจ้งว่าได้รับพัสดุตกค้าง", kind: "unsafe", why: "ถูกต้อง! SMS แจ้งพัสดุมักเป็นกลลวง Phishing" },
+    { emoji: "📩", name: "คลิกลิงก์ SMS แจ้งว่าได้รับพัสดุตกค้าง", kind: "unsafe", why: "ถูกต้อง! SMS แจ้งพัสดุอาจเป็นกลลวง Phishing" },
     { emoji: "🛡️", name: "อัปเดตแอปพลิเคชันมือถือสม่ำเสมอ", kind: "safe", why: "เยี่ยมมาก! การอัปเดตช่วยปิดช่องโหว่ความปลอดภัย" },
-    { emoji: "💸", name: "บอกรหัส OTP 6 หลักให้คนอ้างเป็นเจ้าหน้าที่", kind: "unsafe", why: "ถูกต้อง! ห้ามบอก OTP ให้ใครเด็ดขาด เจ้าหน้าที่ตัวจริงไม่ขอ" },
+    { emoji: "💸", name: "บอกรหัส OTP 6 หลักให้คนอ้างเป็นเจ้าหน้าที่", kind: "unsafe", why: "ถูกต้อง! ห้ามบอก OTP ให้ใครเด็ดขาด" },
     { emoji: "🔒", name: "เปิดใช้งานระบบยืนยันตัวตน 2 ขั้นตอน (2FA)", kind: "safe", why: "ถูกต้อง! ช่วยเพิ่มความปลอดภัยให้อีกชั้น" },
-    { emoji: "🌐", name: "เชื่อมต่อ Wi-Fi ฟรีสาธารณะทำธุรกรรมการเงิน", kind: "unsafe", why: "ถูกต้อง! เครือข่ายสาธารณะเสี่ยงถูกดักขโมยข้อมูล" },
-    { emoji: "💾", name: "สำรองรูปภาพและเอกสารสำคัญเก็บบน Cloud", kind: "safe", why: "ถูกต้อง! ป้องกันข้อมูลสูญหายเมื่อเครื่องพัง" },
-    { emoji: "🔌", name: "เสียบชาร์จมือถือกับตู้ USB สาธารณะฟรีตามห้าง", kind: "unsafe", why: "ถูกต้อง! เสี่ยงถูกฝังมัลแวร์ขโมยข้อมูล (Juice Jacking)" },
-    { emoji: "📷", name: "สแกน QR Code สุ่มสี่สุ่มห้าเพื่อรับของรางวัล", kind: "unsafe", why: "ถูกต้อง! อาจพาไปเว็บไซต์ปลอมดูดเงิน (Qishing)" },
-    { emoji: "🕵️", name: "ตรวจสอบลิงก์เว็บไซต์ก่อนกรอกข้อมูลสำคัญทุกครั้ง", kind: "safe", why: "ถูกต้อง! เช็ก URL ให้ชัวร์ก่อนกรอกรหัสผ่าน" },
-    { emoji: "📱", name: "ตั้งค่าหน้าจอโทรศัพท์ให้ล็อกอัตโนมัติเมื่อไม่ใช้งาน", kind: "safe", why: "ถูกต้อง! ป้องกันคนอื่นหยิบมือถือไปเล่นตอนเผลอ" },
-    { emoji: "🎁", name: "กรอกข้อมูลส่วนตัวในลิงก์ทายผลแจกทองฟรีในโซเชียล", kind: "unsafe", why: "ถูกต้อง! ของฟรีไม่มีในโลก ระวังเว็บปลอมหลอกเอาข้อมูล" },
-    { emoji: "💬", name: "ตั้งค่าความเป็นส่วนตัวไม่ให้คนแปลกใจแอดเฟรนด์", kind: "safe", why: "ถูกต้อง! ป้องกันมิจฉาชีพเข้าถึงข้อมูลส่วนตัว" },
-    { emoji: "💻", name: "ทิ้งคอมพิวเตอร์เก่าโดยไม่ลบข้อมูลส่วนตัวออกก่อน", kind: "unsafe", why: "ถูกต้อง! ต้องล้างข้อมูลและ Format เครื่องก่อนทิ้งหรือขาย" },
-    { emoji: "🛍️", name: "ซื้อของจากร้านค้าออนไลน์ที่มีรีวิวและน่าเชื่อถือ", kind: "safe", why: "ถูกต้อง! ป้องกันการโดนโกงเงินไม่ได้ของ" },
-    { emoji: "📞", name: "รับสายเบอร์แปลกแล้วบอกเลขบัตรประชาชน", kind: "unsafe", why: "ถูกต้อง! ห้ามให้เลขบัตร 13 หลักแก่คนแปลกเด็ดขาด" }
+    { emoji: "🌐", name: "ใช้ Wi-Fi ฟรีสาธารณะทำธุรกรรมการเงิน", kind: "unsafe", why: "ถูกต้อง! ควรหลีกเลี่ยงการทำธุรกรรมสำคัญผ่านเครือข่ายสาธารณะ" },
+    { emoji: "💾", name: "สำรองรูปภาพและเอกสารสำคัญไว้บน Cloud", kind: "safe", why: "ถูกต้อง! ช่วยป้องกันข้อมูลสูญหาย" },
+    { emoji: "🔌", name: "เสียบชาร์จมือถือกับตู้ USB สาธารณะที่ไม่ทราบแหล่งที่มา", kind: "unsafe", why: "ถูกต้อง! พอร์ต USB ที่ไม่น่าเชื่อถืออาจมีความเสี่ยงด้านข้อมูล" },
+    { emoji: "📷", name: "สแกน QR Code ที่ไม่รู้แหล่งที่มาเพื่อรับรางวัล", kind: "unsafe", why: "ถูกต้อง! QR Code อาจพาไปยังเว็บไซต์หลอกลวง" },
+    { emoji: "🕵️", name: "ตรวจสอบ URL ก่อนกรอกข้อมูลสำคัญทุกครั้ง", kind: "safe", why: "ถูกต้อง! ตรวจสอบชื่อเว็บไซต์ให้แน่ใจก่อนกรอกข้อมูล" },
+    { emoji: "📱", name: "ตั้งค่าหน้าจอโทรศัพท์ให้ล็อกอัตโนมัติ", kind: "safe", why: "ถูกต้อง! ช่วยป้องกันผู้อื่นเข้าถึงมือถือเมื่อไม่ได้ใช้งาน" },
+    { emoji: "🎁", name: "กรอกข้อมูลส่วนตัวในลิงก์แจกทองฟรีที่ไม่รู้แหล่งที่มา", kind: "unsafe", why: "ถูกต้อง! ระวังเว็บไซต์ปลอมที่หลอกเก็บข้อมูลส่วนตัว" },
+    { emoji: "💬", name: "ตั้งค่าความเป็นส่วนตัวของบัญชีโซเชียลมีเดีย", kind: "safe", why: "ถูกต้อง! ช่วยจำกัดการเข้าถึงข้อมูลส่วนตัว" },
+    { emoji: "💻", name: "ขายคอมพิวเตอร์เก่าโดยไม่ลบข้อมูลส่วนตัว", kind: "unsafe", why: "ถูกต้อง! ควรลบข้อมูลอย่างปลอดภัยก่อนขายหรือทิ้งอุปกรณ์" },
+    { emoji: "🛍️", name: "ซื้อของจากร้านค้าออนไลน์ที่ตรวจสอบได้และน่าเชื่อถือ", kind: "safe", why: "ถูกต้อง! ตรวจสอบร้านค้าและรีวิวก่อนชำระเงิน" },
+    { emoji: "📞", name: "บอกเลขบัตรประชาชนให้ผู้โทรที่ไม่รู้จัก", kind: "unsafe", why: "ถูกต้อง! อย่าเปิดเผยข้อมูลส่วนตัวกับผู้โทรที่ไม่สามารถยืนยันตัวตนได้" },
+    { emoji: "📶", name: "ปิด Bluetooth เมื่อไม่ได้ใช้งาน", kind: "safe", why: "ถูกต้อง! ช่วยลดช่องทางที่อุปกรณ์อื่นอาจเชื่อมต่อเข้ามาโดยไม่จำเป็น" },    
+    { emoji: "🔑", nam e: "ใช้รหัสผ่านแตกต่างกันในแต่ละเว็บไซต์", kind: "safe", why: "เยี่ยมมาก! หากเว็บไซต์หนึ่งข้อมูลรั่วไหล บัญชีอื่นก็ยังปลอดภัยกว่าเดิม" },
+    { emoji: "🧹", name: "ลบแอปพลิเคชันที่ไม่ได้ใช้งานและไม่จำเป็น", kind: "safe", why: "ถูกต้อง! ช่วยลดความเสี่ยงจากแอปที่อาจเข้าถึงข้อมูลส่วนตัว" },
+    { emoji: "📧", name: "ตรวจสอบอีเมลผู้ส่งก่อนเปิดไฟล์แนบ", kind: "safe", why: "เยี่ยมมาก! การตรวจสอบผู้ส่งช่วยลดความเสี่ยงจากไฟล์อันตราย" },
+    { emoji: "🚪", name: "ออกจากระบบบัญชีทุกครั้งเมื่อใช้คอมพิวเตอร์สาธารณะเสร็จ", kind: "safe", why: "ถูกต้อง! ป้องกันผู้อื่นเข้าถึงบัญชีของเราหลังเลิกใช้งาน" },
+    { emoji: "📂", name: "ดาวน์โหลดโปรแกรมเถื่อนจากเว็บไซต์ที่ไม่รู้จัก", kind: "unsafe", why: "ถูกต้อง! โปรแกรมเถื่อนอาจแฝงมัลแวร์หรือโปรแกรมขโมยข้อมูล" },
+    { emoji: "📸", name: "โพสต์รูปบัตรนักเรียนหรือบัตรพนักงานลงโซเชียลมีเดีย", kind: "unsafe", why: "ถูกต้อง! ข้อมูลบนบัตรอาจถูกนำไปใช้แอบอ้างตัวตนได้" },
+    { emoji: "👥", name: "ให้เพื่อนยืมบัญชีและรหัสผ่านส่วนตัว", kind: "unsafe", why: "ถูกต้อง! การแชร์บัญชีเพิ่มความเสี่ยงที่ข้อมูลหรือบัญชีจะถูกนำไปใช้ผิดวัตถุประสงค์" },
+    { emoji: "🖥️", name: "กดอนุญาตติดตั้งโปรแกรมจากหน้าต่าง Pop-up ที่ไม่รู้จัก", kind: "unsafe", why: "ถูกต้อง! Pop-up ปลอมอาจหลอกให้ติดตั้งโปรแกรมอันตราย" },
+    { emoji: "📍", name: "เปิดเผยตำแหน่งที่อยู่ปัจจุบันแบบสาธารณะตลอดเวลา", kind: "unsafe", why: "ถูกต้อง! อาจทำให้คนไม่หวังดีทราบตำแหน่งและติดตามความเคลื่อนไหวได้" },
   ];
+
+  const $ = id => document.getElementById(id);
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbJs48p-PNnXxsfG5eQfUld682lcEmoaVEzF2wx5MDGZ73IruzxF2YhID-YV_Bvqt0wA/exec";
 
   let audioCtx = null;
   let soundEnabled = true;
   let bgmInterval = null;
-
-  function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-
-  function playTone(freq, type, duration, vol = 0.1) {
-    if (!soundEnabled || !audioCtx) return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    } catch (e) {}
-  }
-
-  function playSFX(name) {
-    if (!soundEnabled) return;
-    initAudio();
-    if (name === 'click') playTone(600, 'square', 0.05, 0.05);
-    else if (name === 'good') {
-      playTone(523.25, 'triangle', 0.1, 0.1);
-      setTimeout(() => playTone(659.25, 'triangle', 0.15, 0.1), 80);
-    } else if (name === 'bad') {
-      playTone(180, 'sawtooth', 0.2, 0.15);
-      setTimeout(() => playTone(130, 'sawtooth', 0.25, 0.15), 100);
-    } else if (name === 'win') {
-      [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2, 0.1), i * 100));
-    } else if (name === 'lose') {
-      [400, 350, 300, 250].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.2, 0.1), i * 120));
-    }
-  }
-
-  function startBGM() {
-    stopBGM();
-    if (!soundEnabled) return;
-    initAudio();
-    let step = 0;
-    const notes = [110, 110, 146.83, 130.81];
-    bgmInterval = setInterval(() => {
-      const speedUp = time <= 10;
-      playTone(notes[step % notes.length], 'sine', speedUp ? 0.1 : 0.15, 0.03);
-      step++;
-    }, time <= 10 ? 250 : 400);
-  }
-
-  function stopBGM() {
-    if (bgmInterval) clearInterval(bgmInterval);
-  }
-
-  const $ = id => document.getElementById(id);
-  let nickname = '';
-  let currentStage = 1; // ด่าน 1, 2, 3
+  let nickname = "";
+  let currentStage = 1;
   let deck = [];
   let score = 0;
   let lives = 3;
@@ -494,307 +455,500 @@ button:active { transform: translateY(2px); box-shadow: none; }
   let done = 0;
   let active = false;
   let clock = null;
+  let finishing = false;
+  let modalResume = false;
 
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbJs48p-PNnXxsfG5eQfUld682lcEmoaVEzF2wx5MDGZ73IruzxF2YhID-YV_Bvqt0wA/exec";
-
-  async function getLeaderboard() {
+  function initAudio() {
     try {
-      const res = await fetch(SCRIPT_URL);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      return [];
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      if (!audioCtx) audioCtx = new AudioContextClass();
+      if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      return audioCtx;
+    } catch (_) {
+      return null;
     }
   }
 
-  async function saveScore(nick, sc) {
+  function playTone(freq, type, duration, vol = 0.1) {
+    if (!soundEnabled) return;
+    const ctx = initAudio();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(Math.max(0.0001, vol), ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (_) {}
+  }
+
+  function playSFX(name) {
+    if (!soundEnabled) return;
+    if (name === "click") playTone(600, "square", 0.05, 0.045);
+    if (name === "good") {
+      playTone(523.25, "triangle", 0.1, 0.08);
+      setTimeout(() => playTone(659.25, "triangle", 0.13, 0.08), 90);
+    }
+    if (name === "bad") {
+      playTone(180, "sawtooth", 0.16, 0.1);
+      setTimeout(() => playTone(130, "sawtooth", 0.2, 0.1), 100);
+    }
+    if (name === "win") [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+      setTimeout(() => playTone(f, "square", 0.16, 0.07), i * 110));
+    if (name === "lose") [400, 350, 300, 250].forEach((f, i) =>
+      setTimeout(() => playTone(f, "sawtooth", 0.16, 0.07), i * 120));
+  }
+
+  function startBGM() {
+    stopBGM();
+    if (!soundEnabled || !active) return;
+    initAudio();
+    const notes = [110, 110, 146.83, 130.81];
+    let step = 0;
+    bgmInterval = setInterval(() => {
+      if (!active || !soundEnabled) return;
+      playTone(notes[step++ % notes.length], "sine", 0.12, 0.022);
+    }, 380);
+  }
+
+  function stopBGM() {
+    if (bgmInterval !== null) {
+      clearInterval(bgmInterval);
+      bgmInterval = null;
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+  }
+
+  async function getLeaderboard() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(SCRIPT_URL, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error("โหลดตารางคะแนนไม่สำเร็จ");
+      const data = await response.json();
+      if (!Array.isArray(data)) return [];
+      return data
+        .filter(row => row && typeof row === "object")
+        .map(row => ({
+          nick: String(row.nick ?? "ผู้เล่น").slice(0, 20),
+          score: Math.max(0, Number(row.score) || 0),
+          diff: String(row.diff ?? "Standard").slice(0, 30)
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function saveScore(nick, finalScore) {
+    if (!SCRIPT_URL || !nick) return false;
     const payload = {
-      nick: nick,
-      score: sc,
+      nick: String(nick).slice(0, 12),
+      score: Math.max(0, Number(finalScore) || 0),
       diff: "3 Stages",
-      date: new Date().toLocaleDateString('th-TH')
+      date: new Date().toLocaleDateString("th-TH")
     };
     try {
+      // Apps Script รองรับการรับข้อความแบบ text/plain โดยไม่ต้อง preflight
       await fetch(SCRIPT_URL, {
-        method: 'POST',
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-    } catch (e) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   async function renderLeaderboard() {
     const lb = await getLeaderboard();
-    if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลอันดับ หรือกำลังโหลด...</p>';
-    
-    let html = `
-      <table class="leaderboard-table">
-        <thead>
-          <tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>รอบ</th></tr>
-        </thead>
-        <tbody>
-    `;
-    lb.forEach((row, i) => {
-      const isMe = row.nick === nickname;
-      html += `
-        <tr class="${isMe ? 'highlight' : ''}">
-          <td>${i + 1}</td>
-          <td>${row.nick}</td>
-          <td><b>${row.score}</b></td>
-          <td><small>${row.diff || 'Standard'}</small></td>
-        </tr>
-      `;
-    });
-    html += '</tbody></table>';
-    return html;
+    if (lb === null) {
+      return '<p style="color:#ffb0bf">ไม่สามารถโหลดตารางคะแนนได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือการตั้งค่า Google Apps Script</p>';
+    }
+    if (lb.length === 0) return '<p style="color:#8c9fde">ยังไม่มีข้อมูลคะแนน</p>';
+
+    const rows = lb.map((row, i) => `
+      <tr class="${row.nick === nickname ? "highlight" : ""}">
+        <td>${i + 1}</td>
+        <td>${escapeHTML(row.nick)}</td>
+        <td><b>${row.score}</b></td>
+        <td><small>${escapeHTML(row.diff)}</small></td>
+      </tr>`).join("");
+
+    return `<table class="leaderboard-table">
+      <thead><tr><th>#</th><th>ชื่อผู้เล่น</th><th>คะแนน</th><th>รอบ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
 
   function setupBins() {
-    ['safe', 'unsafe'].forEach(kind => {
-      const bin = $(kind + 'Bin');
+    ["safe", "unsafe"].forEach(kind => {
+      const bin = $(kind + "Bin");
+      if (!bin) return;
       bin.onclick = () => answer(kind);
-      bin.ondragover = e => { e.preventDefault(); bin.classList.add('over'); };
-      bin.ondragleave = () => bin.classList.remove('over');
-      bin.ondrop = e => {
-        e.preventDefault();
-        bin.classList.remove('over');
-        const i = Number(e.dataTransfer.getData('text/plain'));
-        answer(kind, i);
+      bin.ondragover = event => {
+        event.preventDefault();
+        bin.classList.add("over");
+      };
+      bin.ondragleave = () => bin.classList.remove("over");
+      bin.ondrop = event => {
+        event.preventDefault();
+        bin.classList.remove("over");
+        const rawIndex = event.dataTransfer?.getData("text/plain");
+        if (rawIndex === "") return;
+        const index = Number(rawIndex);
+        if (Number.isInteger(index)) answer(kind, index);
       };
     });
   }
 
   function renderCards() {
-    $('items').innerHTML = '';
-    deck.forEach((c, i) => {
-      if (c.used) return;
-      const el = document.createElement('div');
-      el.className = `item ${selected === i ? 'selected' : ''}`;
-      el.draggable = true;
-      el.innerHTML = `<span class="emoji">${c.emoji}</span><b>${c.name}</b><small>ลากหรือคลิกเพื่อเลือก</small>`;
-      
-      el.addEventListener('dragstart', e => {
-        playSFX('click');
-        selected = i;
-        e.dataTransfer.setData('text/plain', String(i));
-        renderCards();
+    const container = $("items");
+    container.replaceChildren();
+
+    deck.forEach((card, index) => {
+      if (card.used) return;
+      const element = document.createElement("div");
+      element.className = `item${selected === index ? " selected" : ""}`;
+      element.draggable = true;
+      element.tabIndex = 0;
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-label", `${card.name} เลือกการ์ดนี้`);
+      element.innerHTML = `<span class="emoji">${card.emoji}</span><b></b><small>ลากหรือคลิกเพื่อเลือก</small>`;
+      element.querySelector("b").textContent = card.name;
+
+      element.addEventListener("dragstart", event => {
+        if (!active) {
+          event.preventDefault();
+          return;
+        }
+        selected = index;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(index));
+        element.classList.add("selected");
+        playSFX("click");
       });
-      el.addEventListener('click', () => {
-        playSFX('click');
-        selected = i;
+
+      element.addEventListener("click", () => {
+        if (!active) return;
+        selected = index;
+        playSFX("click");
         renderCards();
-        $('feedback').className = 'feedback';
-        $('feedback').textContent = `เลือกแล้ว: "${c.name}" ➔ คลิกกล่องเพื่อจัดหมวด`;
+        $("feedback").className = "feedback";
+        $("feedback").textContent = `เลือกแล้ว: "${card.name}" ➔ คลิกกล่องเพื่อจัดหมวด`;
       });
-      $('items').appendChild(el);
+
+      element.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (!active) return;
+          selected = index;
+          renderCards();
+          $("feedback").textContent = `เลือกแล้ว: "${card.name}" ➔ คลิกกล่องเพื่อจัดหมวด`;
+        }
+      });
+      container.appendChild(element);
     });
-    $('progress').textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
+    $("progress").textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
   }
 
   function updateHUD() {
-    $('score').textContent = String(score).padStart(3, '0');
-    $('lives').textContent = lives > 0 ? '♥ '.repeat(lives).trim() : '—';
-    $('time').textContent = time;
-    $('combo').textContent = `x${combo}`;
-    $('displayStage').textContent = `ด่าน ${currentStage}`;
-    $('progress').textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
+    $("score").textContent = String(score).padStart(3, "0");
+    $("lives").textContent = lives > 0 ? "♥ ".repeat(lives).trim() : "—";
+    $("time").textContent = String(time);
+    $("combo").textContent = `x${combo}`;
+    $("displayStage").textContent = `ด่าน ${currentStage}`;
+    $("progress").textContent = `${done} / ${deck.length} จัดหมวดแล้ว`;
   }
 
-  function answer(kind, idx = selected) {
-    if (!active || idx === null || idx === undefined || !deck[idx] || deck[idx].used) return;
-    const c = deck[idx];
-    
-    if (c.kind === kind) {
-      playSFX('good');
+  function answer(kind, index = selected) {
+    if (!active || index === null || index === undefined ||
+        !Number.isInteger(index) || !deck[index] || deck[index].used) return;
+
+    const card = deck[index];
+    if (card.kind === kind) {
+      playSFX("good");
       score += 10 * combo;
-      combo++;
-      done++;
-      c.used = true;
+      combo += 1;
+      done += 1;
+      card.used = true;
       selected = null;
-      $('feedback').className = 'feedback good';
-      $('feedback').textContent = `✅ ${c.why}`;
+      $("feedback").className = "feedback good";
+      $("feedback").textContent = `✅ ${card.why}`;
       renderCards();
       updateHUD();
-      if (done === deck.length) {
-        nextStage();
-      }
+      if (done >= deck.length) nextStage();
     } else {
-      playSFX('bad');
-      lives--;
+      playSFX("bad");
+      lives = Math.max(0, lives - 1);
       combo = 1;
       selected = null;
-      $('gameFrame').classList.add('shake');
-      setTimeout(() => $('gameFrame'].classList.remove('shake'), 300);
-      $('feedback').className = 'feedback bad';
-      $('feedback').textContent = `❌ ยังไม่ถูกนะ! เสียหัวใจ 1 ดวง`;
+      $("gameFrame").classList.remove("shake");
+      void $("gameFrame").offsetWidth;
+      $("gameFrame").classList.add("shake");
+      setTimeout(() => $("gameFrame").classList.remove("shake"), 320);
+      $("feedback").className = "feedback bad";
+      $("feedback").textContent = "❌ ยังไม่ถูกต้อง! เสียหัวใจ 1 ดวง ลองอีกครั้งนะ";
       renderCards();
       updateHUD();
       if (lives <= 0) gameOver(false);
     }
   }
 
+  function showStageModal() {
+    $("modalTitle").textContent = `ผ่านด่าน ${currentStage - 1} แล้ว!`;
+    $("modalSub").textContent = `ยอดเยี่ยม! เตรียมลุยต่อในด่านที่ ${currentStage}`;
+    $("startForm").classList.add("hidden");
+    $("modalBodyCustom").classList.remove("hidden");
+    $("modalBodyCustom").innerHTML =
+      `<div style="font-size:16px;margin-bottom:10px">คะแนนปัจจุบัน: <b style="color:var(--orange-light);font-size:22px">${score}</b> คะแนน</div><p>พร้อมลุยด่านต่อไปไหม?</p>`;
+    $("btnStartGame").textContent = `▶ ไปด่าน ${currentStage}`;
+    $("btnCloseModal").classList.add("hidden");
+    $("overlay").classList.remove("hidden");
+  }
+
   function nextStage() {
+    if (!active) return;
+    active = false;
     clearInterval(clock);
+    clock = null;
     stopBGM();
+
     if (currentStage < 3) {
-      currentStage++;
-      playSFX('win');
-      
-      // แจ้งเตือนผ่าน Modal ไปด่านถัดไป
-      active = false;
-      $('modalTitle').textContent = `ผ่านด่าน ${currentStage - 1} แล้ว!`;
-      $('modalSub').textContent = `ยอดเยี่ยม! เตรียมลุยต่อในด่านที่ ${currentStage}`;
-      $('startForm').classList.add('hidden');
-      $('modalBodyCustom').classList.remove('hidden');
-      $('modalBodyCustom').innerHTML = `<div style="font-size:16px; margin-bottom:10px;">คะแนนปัจจุบัน: <b style="color:var(--orange-light); font-size:22px;">${score}</b> คะแนน</div><p>พร้อมลุยด่านต่อไปไหม?</p>`;
-      $('btnStartGame').textContent = `▶ ไปด่าน ${currentStage}`;
-      $('btnCloseModal').classList.add('hidden');
-      $('overlay').classList.remove('hidden');
+      currentStage += 1;
+      playSFX("win");
+      showStageModal();
     } else {
-      gameOver(true); // ชนะครบทั้ง 3 ด่าน
+      gameOver(true);
     }
   }
 
   function startStage() {
-    let count = 15;
-    if (currentStage === 1) { count = 15; time = 60; }
-    else if (currentStage === 2) { count = 10; time = 40; }
-    else if (currentStage === 3) { count = 8; time = 30; }
-
+    const settings = {
+      1: { count: 15, time: 60 },
+      2: { count: 10, time: 45 },
+      3: { count: 8, time: 35 }
+    };
+    const stage = settings[currentStage] || settings[1];
     const shuffledPool = [...cardsPool].sort(() => Math.random() - 0.5);
-    deck = shuffledPool.slice(0, count).map(c => ({ ...c, used: false }));
 
+    deck = shuffledPool.slice(0, Math.min(stage.count, cardsPool.length))
+      .map(card => ({ ...card, used: false }));
     done = 0;
     selected = null;
+    time = stage.time;
     active = true;
+    finishing = false;
 
     setupBins();
     renderCards();
     updateHUD();
 
-    $('overlay').classList.add('hidden');
-    $('feedback').className = 'feedback';
-    $('feedback').textContent = `เริ่มด่านที่ ${currentStage} แล้ว! จัดหมวดหมู่การ์ดด่วน`;
+    $("overlay").classList.add("hidden");
+    $("feedback").className = "feedback";
+    $("feedback").textContent = `เริ่มด่านที่ ${currentStage} แล้ว! จัดหมวดหมู่การ์ดให้ถูกต้อง`;
 
-    startBGM();
     clearInterval(clock);
+    stopBGM();
+    startBGM();
     clock = setInterval(() => {
       if (!active) return;
-      time--;
+      time = Math.max(0, time - 1);
       updateHUD();
-      if (time === 10) startBGM();
       if (time <= 0) gameOver(false);
     }, 1000);
   }
 
-  async function gameOver(win) {
+  async function gameOver(won) {
+    if (finishing) return;
+    finishing = true;
     active = false;
     clearInterval(clock);
+    clock = null;
     stopBGM();
-    playSFX(win ? 'win' : 'lose');
-    
-    await saveScore(nickname, score);
+    playSFX(won ? "win" : "lose");
 
-    $('modalTitle').textContent = win ? '🎉 CLEAR ALL STAGES!' : 'GAME OVER';
-    $('modalSub').textContent = win ? 'คุณเคลียร์ครบทุกด่านและเป็นเซียนความปลอดภัยไซเบอร์ตัวจริง!' : 'หมดเวลาหรือหัวใจหมด! ลองใหม่อีกครั้งนะ';
-    
-    $('startForm').classList.add('hidden');
-    $('modalBodyCustom').classList.remove('hidden');
-    
-    const lbTableHtml = await renderLeaderboard();
-    
-    $('modalBodyCustom').innerHTML = `
-      <div style="font-size:16px; margin-bottom:10px;">คะแนนรวมทั้งหมด: <b style="color:var(--orange-light); font-size:22px;">${score}</b> คะแนน</div>
+    const finalScore = score;
+    const finalNick = nickname;
+    $("modalTitle").textContent = won ? "🎉 CLEAR ALL STAGES!" : "GAME OVER";
+    $("modalSub").textContent = won
+      ? "คุณเคลียร์ครบทุกด่านและเป็นเซียนความปลอดภัยไซเบอร์ตัวจริง!"
+      : "หมดเวลาหรือหัวใจหมด! ลองใหม่อีกครั้งนะ";
+    $("startForm").classList.add("hidden");
+    $("modalBodyCustom").classList.remove("hidden");
+    $("modalBodyCustom").innerHTML =
+      `<p style="color:#8c9fde">กำลังบันทึกคะแนนและโหลดตารางอันดับ...</p>`;
+    $("btnStartGame").textContent = "↻ เริ่มเล่นใหม่ทั้งหมด";
+    $("btnCloseModal").classList.remove("hidden");
+    $("overlay").classList.remove("hidden");
+
+    await saveScore(finalNick, finalScore);
+    const leaderboardHTML = await renderLeaderboard();
+    $("modalBodyCustom").innerHTML = `
+      <div style="font-size:16px;margin-bottom:10px">คะแนนรวมทั้งหมด: <b style="color:var(--orange-light);font-size:22px">${finalScore}</b> คะแนน</div>
       <p>ตารางคะแนนสูงสุด (TOP 10 HIGH SCORES)</p>
-      ${lbTableHtml}
-    `;
-
-    $('btnStartGame').textContent = '↻ เริ่มเล่นใหม่ทั้งหมด';
-    $('btnCloseModal').classList.remove('hidden');
-    $('overlay').classList.remove('hidden');
+      ${leaderboardHTML}`;
     currentStage = 1;
     lives = 3;
     score = 0;
+    combo = 1;
+    updateHUD();
   }
 
-  $('btnStartGame').addEventListener('click', () => {
-    playSFX('click');
-    const inputNick = $('nickInput').value.trim();
-    
-    if (!$('startForm').classList.contains('hidden')) {
+  function resetToStart() {
+    active = false;
+    clearInterval(clock);
+    clock = null;
+    stopBGM();
+    currentStage = 1;
+    score = 0;
+    lives = 3;
+    combo = 1;
+    time = 60;
+    selected = null;
+    done = 0;
+    finishing = false;
+    modalResume = false;
+    updateHUD();
+    $("startForm").classList.remove("hidden");
+    $("modalBodyCustom").classList.add("hidden");
+    $("btnCloseModal").classList.add("hidden");
+    $("modalTitle").textContent = "SORT SECURE";
+    $("modalSub").textContent = "กรอกชื่อเล่นเพื่อเริ่มภารกิจไซเบอร์ 3 ด่านท้าทาย!";
+    $("btnStartGame").textContent = "▶ เริ่มเล่นเกม";
+    $("nickErr").style.display = "none";
+    $("overlay").classList.remove("hidden");
+    $("nickInput").focus();
+  }
+
+  $("btnStartGame").addEventListener("click", () => {
+    playSFX("click");
+    if (modalResume) {
+      modalResume = false;
+      $("overlay").classList.add("hidden");
+      active = true;
+      startBGM();
+      clearInterval(clock);
+      clock = setInterval(() => {
+        if (!active) return;
+        time = Math.max(0, time - 1);
+        updateHUD();
+        if (time <= 0) gameOver(false);
+      }, 1000);
+      return;
+    }
+    if (!$("startForm").classList.contains("hidden")) {
+      const inputNick = $("nickInput").value.trim().replace(/\s+/g, " ");
       if (!inputNick) {
-        $('nickErr').style.display = 'block';
-        $('nickErr').textContent = '* กรุณาระบุชื่อเล่นก่อนเข้าเล่น';
+        $("nickErr").style.display = "block";
+        $("nickErr").textContent = "* กรุณาระบุชื่อเล่นก่อนเข้าเล่น";
+        $("nickInput").focus();
         return;
       }
-      $('nickErr').style.display = 'none';
-      nickname = inputNick;
-      $('displayNick').textContent = nickname;
+      nickname = inputNick.slice(0, 12);
+      $("displayNick").textContent = nickname;
       currentStage = 1;
       score = 0;
       lives = 3;
+      combo = 1;
     }
-
     startStage();
   });
 
-  $('restart').addEventListener('click', () => {
-    playSFX('click');
-    if (nickname) {
-      currentStage = 1;
-      score = 0;
-      lives = 3;
-      startStage();
-    } else {
-      $('overlay').classList.remove('hidden');
-    }
+  $("nickInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") $("btnStartGame").click();
   });
 
-  $('btnChangePlayer').addEventListener('click', () => {
-    playSFX('click');
-    active = false;
-    clearInterval(clock);
-    stopBGM();
+  $("restart").addEventListener("click", () => {
+    playSFX("click");
+    if (!nickname) {
+      resetToStart();
+      return;
+    }
     currentStage = 1;
     score = 0;
     lives = 3;
-    $('startForm').classList.remove('hidden');
-    $('modalBodyCustom').classList.add('hidden');
-    $('btnCloseModal').classList.add('hidden');
-    $('modalTitle').textContent = 'SORT SECURE';
-    $('modalSub').textContent = 'กรอกชื่อเล่นเพื่อเริ่มภารกิจไซเบอร์ 3 ด่านท้าทาย!';
-    $('btnStartGame').textContent = '▶ เริ่มเล่นเกม';
-    $('overlay').classList.remove('hidden');
+    combo = 1;
+    finishing = false;
+    startStage();
   });
 
-  $('btnLeaderboard').addEventListener('click', async () => {
-    playSFX('click');
-    $('modalTitle').textContent = '🏆 LEADERBOARD';
-    $('modalSub').textContent = '10 อันดับคะแนนสูงสุดประจำบูธ (Realtime)';
-    $('startForm').classList.add('hidden');
-    $('modalBodyCustom').classList.remove('hidden');
-    $('modalBodyCustom').innerHTML = '<p style="color:#8c9fde">กำลังโหลดข้อมูลจาก Google Sheets...</p>';
-    
-    const tableHtml = await renderLeaderboard();
-    $('modalBodyCustom').innerHTML = tableHtml;
-
-    $('btnStartGame').textContent = nickname ? '▶ เล่นต่อ / เริ่มใหม่' : '▶ เริ่มเล่นเกม';
-    $('btnCloseModal').classList.remove('hidden');
-    $('overlay').classList.remove('hidden');
+  $("btnChangePlayer").addEventListener("click", () => {
+    playSFX("click");
+    resetToStart();
   });
 
-  $('btnCloseModal').addEventListener('click', () => {
-    playSFX('click');
-    $('overlay').classList.add('hidden');
+  $("btnLeaderboard").addEventListener("click", async () => {
+    playSFX("click");
+    const wasActive = active;
+    modalResume = wasActive;
+    if (wasActive) {
+      active = false;
+      clearInterval(clock);
+      clock = null;
+      stopBGM();
+    }
+    $("modalTitle").textContent = "🏆 LEADERBOARD";
+    $("modalSub").textContent = "10 อันดับคะแนนสูงสุดประจำบูธ";
+    $("startForm").classList.add("hidden");
+    $("modalBodyCustom").classList.remove("hidden");
+    $("modalBodyCustom").innerHTML = '<p style="color:#8c9fde">กำลังโหลดข้อมูล...</p>';
+    $("btnStartGame").textContent = wasActive ? "▶ เล่นต่อ" : (nickname ? "↻ เริ่มใหม่" : "▶ เริ่มเล่นเกม");
+    $("btnCloseModal").classList.remove("hidden");
+    $("overlay").classList.remove("hidden");
+
+    const tableHTML = await renderLeaderboard();
+    $("modalBodyCustom").innerHTML = tableHTML;
   });
 
-  $('soundToggle').addEventListener('click', () => {
+  $("btnCloseModal").addEventListener("click", () => {
+    playSFX("click");
+    $("overlay").classList.add("hidden");
+    if (nickname && !finishing && currentStage >= 1 && deck.length && !active) {
+      // หากเปิดตารางคะแนนระหว่างเล่น ให้กลับไปเล่นต่อโดยไม่เสียเวลา
+      active = true;
+      startBGM();
+      clearInterval(clock);
+      clock = setInterval(() => {
+        if (!active) return;
+        time = Math.max(0, time - 1);
+        updateHUD();
+        if (time <= 0) gameOver(false);
+      }, 1000);
+    }
+  });
+
+  $("soundToggle").addEventListener("click", () => {
     soundEnabled = !soundEnabled;
-    $('soundToggle').textContent = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
+    $("soundToggle").textContent = soundEnabled ? "🔊 เสียง: เปิด" : "🔇 เสียง: ปิด";
     if (!soundEnabled) stopBGM();
-    else if (active) startBGM();
+    else if (active) {
+      initAudio();
+      startBGM();
+    }
   });
 
   setupBins();
+  updateHUD();
 })();
 </script>
 </body>
